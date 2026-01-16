@@ -7,4 +7,4 @@ load_dotenv()
 
 def get_embedding_function():
 
-    embeddings = GoogleGenerativeAIEmbeddings(model="")
+    return  GoogleGenerativeAIEmbeddings(model="models/embedding-001")

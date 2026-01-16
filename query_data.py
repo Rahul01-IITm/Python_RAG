@@ -3,7 +3,7 @@ import argparse
 from dotenv import load_dotenv
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from get_embedding_function import get_embedding_function
 
 load_dotenv()
@@ -36,10 +36,10 @@ def query_rag(query_text: str):
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
 
     # 3. Setup Kimi Model (using OpenAI-compatible interface)
-    model = ChatOpenAI(
+    model = ChatGroq(
         model="moonshotai/kimi-k2-instruct-0905", 
-        openai_api_key=os.environ.get("MOONSHOT_API_KEY"),
-        openai_api_base=os.environ.get("MOONSHOT_BASE_URL")
+        groq_api_key=os.environ.get("MOONSHOT_API_KEY"),
+        groq_api_base=os.environ.get("MOONSHOT_BASE_URL")
     )
 
     # 4. Generate the response
