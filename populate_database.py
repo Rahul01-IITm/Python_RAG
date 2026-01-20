@@ -1,38 +1,46 @@
 import os
-import shutil
-from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
-from langchain_community.vectorstores import Chroma
-from get_embedding_function import get_embedding_function
+from dotenv import load_dotenv
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_openai import ChatOpenAI
+from langchain.docstore.document import Document
 
-CHROMA_PATH = "chroma"
-DATA_PATH = "data"
+load_dotenv()
+api_key = os.getenv("OPENROUTER_API_KEY")
 
-def main():
-    if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH) # Clear old DB for a fresh start
 
-    documents = load_documents()
-    chunks = split_documents(documents)
-    save_to_chroma(chunks)
 
-def load_documents():
-    loader = PyPDFDirectoryLoader(DATA_PATH)
-    return loader.load()
+# 2. Local Embeddings 
+# Using 'all-MiniLM-L6-v2' - it's fast and runs on your CPU
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-def split_documents(documents: list[Document]):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100
-    )
-    return text_splitter.split_documents(documents)
+# 3. Your Data (The "Knowledge Base")
+text_data = [
+    "Kimi K2 is a 1-trillion parameter model by Moonshot AI.",
+    "RAG stands for Retrieval-Augmented Generation.",
+    "Sentence Transformers convert text into math vectors."
+]
+documents = [Document(page_content=t) for t in text_data]
 
-def save_to_chroma(chunks: list[Document]):
-    db = Chroma.from_documents(
-        chunks, get_embedding_function(), persist_directory=CHROMA_PATH
-    )
-    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
+# 4. Create Vector Store (The search engine)
+vector_db = FAISS.from_documents(documents, embeddings)
 
-if __name__ == "__main__":
-    main()
+# 5. Define the LLM (Using Kimi K2 via OpenRouter)
+llm = ChatOpenAI(
+    model="moonshotai/kimi-k2:free",
+    openai_api_key=OPENROUTER_API_KEY,
+    openai_api_base="https://openrouter.ai/api/v1",
+)
+
+# 6. The RAG Process
+query = "Who made Kimi K2?"
+
+# Step A: Retrieve relevant info from your data
+docs = vector_db.similarity_search(query, k=1)
+context = docs[0].page_content
+
+# Step B: Generate answer using the context
+prompt = f"Context: {context}\n\nQuestion: {query}\nAnswer based only on context:"
+response = llm.invoke(prompt)
+
+print(f"Response from Kimi K2: {response.content}")
