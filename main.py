@@ -1,14 +1,25 @@
 import os
 from dotenv import load_dotenv
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
-from langchain.docstore.document import Document
+# from langchain.docstore.document import Document
 
 def main():
-
+    # 1. Load environment variables
     load_dotenv()
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    
+    # Must match the name in your .env file
+    my_key = os.getenv("OPENROUTER_API_KEY")
+
+    # DEBUG: Check if key loaded
+    if not my_key:
+        print("❌ Error: Could not find OPENROUTER_API_KEY in .env file!")
+        return
+    else:
+        print(f"✅ API Key loaded successfully: {my_key[:10]}...")
 
 
 
@@ -38,8 +49,8 @@ def main():
     # 5. (Using Kimi K2 via OpenRouter)
     llm = ChatOpenAI(
         model="moonshotai/kimi-k2:free",
-        open_api_key=OPENROUTER_API_KEY,
-        open_api_base="https://openrouter.ai/api/v1",
+        openai_api_key=my_key,
+        base_url="https://openrouter.ai/api/v1",
     )
 
     # 6. The RAG Process
