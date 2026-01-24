@@ -3,19 +3,16 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_openai import ChatOpenAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_groq import ChatGroq
 
 
 def main():
     # 1. Loading api key from .env
     load_dotenv() 
-    my_key = os.getenv("OPENROUTER_API_KEY")
 
     # DEBUG: Check if key loaded
-    if not my_key:
-        print(" Missing Api key!")
-        return
+   
      
 
 
@@ -25,11 +22,11 @@ def main():
 
     # 3.Loading pdf documents
     pdf_path = "chess_rules.pdf"
-    if not os.path.exists("pdf_path"):
-        print("Error: {pdf_path} not found")
+    if not os.path.exists(pdf_path):
+        print(f"Error: {pdf_path} not found")
         return
 
-    loader = PyPDFLoader("pdf_path")
+    loader = PyPDFLoader(pdf_path)
     documents = loader.load()
 
     #3 chunking the data
@@ -39,15 +36,13 @@ def main():
     # 4. Create Vector Store (The search engine)
     print("Building vector store...")
     vector_db = FAISS.from_documents(chunks, embeddings)
-    print("Datbase ready !")
+    print("Database ready !")
 
 
 
     # 5. (Using Kimi K2 via OpenRouter)
-    llm = ChatOpenAI(
-    model="moonshotai/kimi-k2:free",
-    openai_api_key=my_key,
-    base_url="https://openrouter.ai/api/v1",)
+    llm = ChatGroq(
+    model="qwen/qwen3-32b")
 
     while True:
         query = input("ask a question about your pdf")
@@ -55,10 +50,10 @@ def main():
             break
 
 
-        docs = vector_db.similarity_search(query, k=1)
+        docs = vector_db.similarity_search(query, k=3)
 
    
-        context = docs[0].page_content
+        context = "\n\n".join([d.page_content for d in docs])
 
      # C. Create a prompt
         prompt = f"""Use the following pieces of context to answer the question at the end. 
