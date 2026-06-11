@@ -40,7 +40,7 @@ def main():
 
 
 
-    # 5. (Using Kimi K2 via OpenRouter)
+    # 5. (Using QWEN via OpenRouter)
     llm = ChatGroq(
     model="qwen/qwen3-32b")
 
